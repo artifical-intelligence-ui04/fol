@@ -9,7 +9,7 @@ class ManualController:
         self.clock = pygame.time.Clock()
 
     def reset(self):
-        self.game = MineSweeper(rows=15, cols=15, mines=15, seed=42, auto_flood_fill=True)
+        self.game = MineSweeper(rows=30, cols=50, mines=500, seed=42, auto_flood_fill=True)
 
     def run(self):
         print("Starting Manual Game...")
@@ -31,7 +31,7 @@ class ManualController:
             if not self.game.game_over and event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = pygame.mouse.get_pos()
                 
-                # Check if click is inside grid (ignore HUD clicks)
+                # Check if click is inside grid
                 if y < (self.game.rows * CELL_SIZE):
                     c = x // CELL_SIZE
                     r = y // CELL_SIZE
@@ -39,9 +39,14 @@ class ManualController:
                     if event.button == 1:   # Left Click
                         self.game.reveal(r, c)
                     elif event.button == 3: # Right Click
-                        self.game.flag(r, c)
+                        if self.game.grid_visibility[r][c] == 0:
+                            self.game.flag(r, c)
+                        elif self.game.grid_visibility[r][c] == 2:
+                            self.game.unflag(r, c)
+                        else:
+                            continue
             
-            # Optional: Restart on click if Game Over
+            # Restart on click if Game Over
             elif self.game.game_over and event.type == pygame.MOUSEBUTTONDOWN:
                 print("Restarting...")
                 self.reset()

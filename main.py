@@ -4,8 +4,13 @@ import pygame
 import time
 from pyDatalog import pyDatalog
 
+# 1. Define Terms
+# 2. Define Rules
 
 def prolog_solver(game):
+
+    # 3. Define Facts
+
     running = True
     while running:
         # Check Pygame events (keep window responsive)
@@ -19,9 +24,6 @@ def prolog_solver(game):
             time.sleep(2)
             break
 
-        # 1. Define Terms
-        # 2. Define Facts
-        # 3. Define Rules
         # 4. Query to Reveal/Flag
         # 5. Take Actions
 

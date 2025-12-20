@@ -30,6 +30,7 @@ class MineSweeper:
             raise ValueError("rows, cols and mines must be positive")
         self.rows = rows
         self.cols = cols
+        self.start_pos = (self.rows // 2, self.cols // 2)
         self.total_mines = mines
         self.seed = seed
         self.auto_flood_fill = auto_flood_fill
@@ -64,8 +65,7 @@ class MineSweeper:
         if self.total_mines > (self.rows * self.cols) // 2:
             raise ValueError("Too many mines")
 
-        # Define Safe Zone (Center 3x3)
-        center_r, center_c = self.rows // 2, self.cols // 2
+        center_r, center_c = self.start_pos
         safe_zone = []
         for r in range(center_r - 1, center_r + 2):
             for c in range(center_c - 1, center_c + 2):
@@ -125,11 +125,18 @@ class MineSweeper:
         
         self._check_victory()
 
+        if val == MINE:
+            return -1
+        else:
+            return val
+        
+
     def flag(self, r, c):
         if self.game_over: return
         if not (0 <= r < self.rows and 0 <= c < self.cols): return
+        if self.grid_visibility[r][c] == FLAGGED: return
 
-        self.grid_visibility[r][c] = 2
+        self.grid_visibility[r][c] = FLAGGED
         self.flags_placed += 1
 
         self._check_victory()
@@ -138,10 +145,13 @@ class MineSweeper:
     def unflag(self, r, c):
         if self.game_over: return
         if not (0 <= r < self.rows and 0 <= c < self.cols): return
+        if self.grid_visibility[r][c] == HIDDEN: return
 
-        self.grid_visibility[r][c] = 0
+        self.grid_visibility[r][c] = HIDDEN
         self.flags_placed -= 1
-        
+
+    def get_start_pos(self):
+        return self.start_pos
 
     def _flood_fill(self, r, c):
         """Recursive reveal for zero-islands."""
@@ -273,28 +283,6 @@ class MineSweeper:
             correct_flags = 0
             for row in range(self.rows):
                 for col in range(self.cols):
-                    if self.grid_visibility[row][col] == 2 and self.grid_values[row][col] == 2:
+                    if self.grid_visibility[row][col] == FLAGGED and self.grid_values[row][col] == MINE:
                         correct_flags += 1
             return correct_flags
-
-    # --- PyDatalog Bridge Methods ---
-    def get_known_cells_facts(self):
-        return [(r, c, self.grid_values[r][c]) for r in range(self.rows) for c in range(self.cols) if self.grid_visibility[r][c] == 1]
-    
-    def get_flagged_cells_facts(self):
-        return [(r, c) for r in range(self.rows) for c in range(self.cols) if self.grid_visibility[r][c] == 2]
-    
-    def get_unrevealed_cells_facts(self):
-        return [(r, c) for r in range(self.rows) for c in range(self.cols) if self.grid_visibility[r][c] == 0]
-    
-    def get_adjacent_facts(self):
-        facts = []
-        for r in range(self.rows):
-            for c in range(self.cols):
-                for dr in [-1, 0, 1]:
-                    for dc in [-1, 0, 1]:
-                        if dr == 0 and dc == 0: continue
-                        nr, nc = r + dr, c + dc
-                        if 0 <= nr < self.rows and 0 <= nc < self.cols:
-                            facts.append((r, c, nr, nc))
-        return facts
