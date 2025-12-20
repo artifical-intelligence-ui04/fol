@@ -1,3 +1,47 @@
+"""
+Minesweeper Solver with First-Order Logic
+Fundamentals of AI Course - Phase 4 Project
+
+University of Isfahan - Fall 2025
+
+Course Instructor: Dr. Hossein Karshenas
+Teaching Assistants:
+    - Mahdi Mahdieh
+    - Younes Rad
+    - Danial Shafiei
+    - Pooya Esfandany
+
+This environment implements the classic Minesweeper game with a focus on
+solving it using first-order logic and inference engines. The project
+requires implementing logical deduction rules to identify safe cells and
+mines without random guessing.
+
+Key Components:
+- MineSweeper: Main game environment with PyGame visualization
+- Inference Engine: PyDatalog or Prolog-based logic system
+- Rule Base: Safety and danger rules for deterministic deduction
+- Agent: Logical agent that queries the inference engine for moves
+
+Environment Features:
+- Configurable grid sizes and mine counts
+- Guaranteed safe starting position (always a zero)
+- Visualization of game state
+- Flagging and revealing actions
+- Victory/defeat conditions
+- Progress tracking and statistics
+
+Game Rules:
+- Cells contain numbers (0-8) indicating adjacent mines
+- Flag cells suspected to contain mines
+- Reveal safe cells to expand the known area
+- Win by flagging all mines and revealing all safe cells
+
+Logical Rules to Implement:
+1. Safety Rule: If a cell's number equals its flagged neighbors, all remaining hidden neighbors are safe
+2. Danger Rule: If a cell's number equals its total hidden neighbors, all hidden neighbors are mines
+
+"""
+
 import pygame
 import random
 
