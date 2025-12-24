@@ -69,28 +69,28 @@ FLAGGED = 2
 
 
 class MineSweeper:
-    def __init__(self, rows, cols, mines, seed=-1, auto_flood_fill=False):
+    def __init__(self, rows, cols, mines, seed=None, auto_flood_fill=False):
         if rows < 1 or cols < 1 or mines < 1:
             raise ValueError("rows, cols and mines must be positive")
         self.rows = rows
         self.cols = cols
-        self.start_pos = (self.rows // 2, self.cols // 2)
-        self.total_mines = mines
-        self.seed = seed
-        self.auto_flood_fill = auto_flood_fill
+        self._start_pos = (self.rows // 2, self.cols // 2)
+        self._total_mines = mines
+        self._seed = seed
+        self._auto_flood_fill = auto_flood_fill
 
         # Dimensions
         self.width = cols * CELL_SIZE
         self.height = (rows * CELL_SIZE) + HUD_HEIGHT
         
         # Game State
-        self.grid_values = [[0 for _ in range(cols)] for _ in range(rows)]
+        self._grid_values = [[0 for _ in range(cols)] for _ in range(rows)]
         self.grid_visibility = [[HIDDEN for _ in range(cols)] for _ in range(rows)] # 0:Hidden, 1:Rev, 2:Flag
         self.game_over = False
         self.victory = False
-        self.flags_placed = 0
-        self.revealed_count = 0
-        self.total_safe_cells = (rows * cols) - mines
+        self._flags_placed = 0
+        self._revealed_count = 0
+        self._total_safe_cells = (rows * cols) - mines
         
         # Pygame Setup
         pygame.init()
@@ -103,13 +103,13 @@ class MineSweeper:
 
     def _generate_board(self):
         """Generates board with a GUARANTEED 0-value start at center."""
-        if self.seed is not None and self.seed > -1:
-            random.seed(self.seed)
+        if self._seed is not None and self._seed > -1:
+            random.seed(self._seed)
 
-        if self.total_mines > (self.rows * self.cols) // 2:
+        if self._total_mines > (self.rows * self.cols) // 2:
             raise ValueError("Too many mines")
 
-        center_r, center_c = self.start_pos
+        center_r, center_c = self._start_pos
         safe_zone = []
         for r in range(center_r - 1, center_r + 2):
             for c in range(center_c - 1, center_c + 2):
@@ -118,32 +118,32 @@ class MineSweeper:
 
         # Place Mines (Excluding Safe Zone)
         mines_placed = 0
-        while mines_placed < self.total_mines:
+        while mines_placed < self._total_mines:
             r = random.randint(0, self.rows - 1)
             c = random.randint(0, self.cols - 1)
             
-            if (r, c) not in safe_zone and self.grid_values[r][c] != -1:
-                self.grid_values[r][c] = -1
+            if (r, c) not in safe_zone and self._grid_values[r][c] != MINE:
+                self._grid_values[r][c] = MINE
                 mines_placed += 1
 
         # Calculate Clues
         for r in range(self.rows):
             for c in range(self.cols):
-                if self.grid_values[r][c] == -1: continue
+                if self._grid_values[r][c] == MINE: continue
                 count = 0
                 for dr in [-1, 0, 1]:
                     for dc in [-1, 0, 1]:
                         if dr == 0 and dc == 0: continue
                         nr, nc = r + dr, c + dc
                         if 0 <= nr < self.rows and 0 <= nc < self.cols:
-                            if self.grid_values[nr][nc] == -1:
+                            if self._grid_values[nr][nc] == MINE:
                                 count += 1
-                self.grid_values[r][c] = count
+                self._grid_values[r][c] = count
 
         # Reveal Center (Guaranteed to be 0 and safe)
         self.grid_visibility[center_r][center_c] = REVEALED
-        self.revealed_count += 1
-        if self.auto_flood_fill:
+        self._revealed_count += 1
+        if self._auto_flood_fill:
             self._flood_fill(center_r, center_c)
 
     # --- Actions ---
@@ -155,22 +155,22 @@ class MineSweeper:
 
         # Execute Reveal
         self.grid_visibility[r][c] = 1
-        self.revealed_count += 1
+        self._revealed_count += 1
 
         # Check Logic
-        val = self.grid_values[r][c]
+        val = self._grid_values[r][c]
         
         if val == MINE:
             self.game_over = True
             self.victory = False
             print(f"Game Over! Mine at {r}, {c}")
-        elif val == 0 and self.auto_flood_fill:
+        elif val == 0 and self._auto_flood_fill:
             self._flood_fill(r, c)
         
         self._check_victory()
 
         if val == MINE:
-            return -1
+            return MINE
         else:
             return val
         
@@ -181,7 +181,7 @@ class MineSweeper:
         if self.grid_visibility[r][c] == FLAGGED: return
 
         self.grid_visibility[r][c] = FLAGGED
-        self.flags_placed += 1
+        self._flags_placed += 1
 
         self._check_victory()
 
@@ -192,10 +192,10 @@ class MineSweeper:
         if self.grid_visibility[r][c] == HIDDEN: return
 
         self.grid_visibility[r][c] = HIDDEN
-        self.flags_placed -= 1
+        self._flags_placed -= 1
 
     def get_start_pos(self):
-        return self.start_pos
+        return self._start_pos
 
     def _flood_fill(self, r, c):
         """Recursive reveal for zero-islands."""
@@ -210,13 +210,13 @@ class MineSweeper:
                         if (nr, nc) not in visited and self.grid_visibility[nr][nc] == 0:
                             visited.add((nr, nc))
                             self.grid_visibility[nr][nc] = 1
-                            self.revealed_count += 1
-                            if self.grid_values[nr][nc] == 0:
+                            self._revealed_count += 1
+                            if self._grid_values[nr][nc] == 0:
                                 stack.append((nr, nc))
         self._check_victory()
 
     def _check_victory(self):
-        if self.revealed_count == self.total_safe_cells:
+        if self._revealed_count == self._total_safe_cells:
             self.game_over = True
             self.victory = True
             return True
@@ -232,7 +232,7 @@ class MineSweeper:
             for c in range(self.cols):
                 rect = pygame.Rect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE)
                 vis = self.grid_visibility[r][c]
-                val = self.grid_values[r][c]
+                val = self._grid_values[r][c]
                 
                 if vis == REVEALED:
                     pygame.draw.rect(self.screen, COLORS['cell_revealed'], rect)
@@ -274,13 +274,13 @@ class MineSweeper:
         hud_font = pygame.font.Font(None, 20)
 
         # Progress Calc
-        pct = int((self.revealed_count / self.total_safe_cells) * 100)
+        pct = int((self._revealed_count / self._total_safe_cells) * 100)
         
         # Flag Color Logic
-        flag_color = COLORS['warning'] if self.flags_placed > self.total_mines else COLORS['hud_text']
+        flag_color = COLORS['warning'] if self._flags_placed > self._total_mines else COLORS['hud_text']
         
         txt_progress = hud_font.render(f"Progress: {pct}%", True, COLORS['hud_text'])
-        txt_flags = hud_font.render(f"Flags: {self.flags_placed}/{self.total_mines}", True, flag_color)
+        txt_flags = hud_font.render(f"Flags: {self._flags_placed}/{self._total_mines}", True, flag_color)
         
         self.screen.blit(txt_progress, (10, hud_rect.centery - 10))
         self.screen.blit(txt_flags, (self.width - 120, hud_rect.centery - 10))
@@ -300,7 +300,7 @@ class MineSweeper:
         t_surf = self.large_font.render(title, True, col)
         
         # Final Stats
-        s_surf = self.font.render(f"Flags Correct: {self._count_correct_flags()}/{self.total_mines}",
+        s_surf = self.font.render(f"Flags Correct: {self._count_correct_flags()}/{self._total_mines}",
                                   True,
                                   (255, 255, 255))
         
@@ -322,11 +322,11 @@ class MineSweeper:
 
     def _count_correct_flags(self):
         if self.victory:
-            return self.total_mines
+            return self._total_mines
         else:
             correct_flags = 0
             for row in range(self.rows):
                 for col in range(self.cols):
-                    if self.grid_visibility[row][col] == FLAGGED and self.grid_values[row][col] == MINE:
+                    if self.grid_visibility[row][col] == FLAGGED and self._grid_values[row][col] == MINE:
                         correct_flags += 1
             return correct_flags
