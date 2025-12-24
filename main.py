@@ -26,6 +26,7 @@ def prolog_solver(game):
 
         # 4. Query to Reveal/Flag
         # 5. Take Actions
+        # 6. Assert New Facts
 
 if __name__ == "__main__":
     ms = MineSweeper(rows=10, cols=10, mines=10, seed=42)
